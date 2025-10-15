@@ -5,7 +5,7 @@
 #include <Adafruit_SSD1306.h>
 #include "DHT.h"
 #include <TinyGPS++.h>
-#include <SoftwareSerial.h>
+#include <SoftwareSerial.h>  
 #include <HTTPClient.h>
 
 // ----- Cấu hình WiFi -----
