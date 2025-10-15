@@ -13,8 +13,8 @@ const char* ssid = "Lan Anh_plus";
 const char* password = "12345678";
 
 // ----- Cấu hình Telegram -----
-const char* botToken = "7540750464:AAHmm7jSLbRNe_JuoJifV9CL-mFm2p7lmtg";  // Thay bằng token bot Telegram 
-const char* chatID = "7849432822";      // Thay bằng chat ID Telegram 
+const char* botToken = " ";  // Thay bằng token bot Telegram 
+const char* chatID = " ";      // Thay bằng chat ID Telegram 
 
 // ----- Cấu hình cảm biến DHT11 -----
 #define DHTPIN 18
