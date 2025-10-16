@@ -9,8 +9,8 @@
 #include <HTTPClient.h>
 
 // ----- Cấu hình WiFi -----
-const char* ssid = "Lan Anh_plus";
-const char* password = "12345678";
+const char* ssid = " ";
+const char* password = " ";
 
 // ----- Cấu hình Telegram -----
 const char* botToken = " ";  // Thay bằng token bot Telegram 
