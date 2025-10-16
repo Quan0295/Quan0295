@@ -1,0 +1,1 @@
+thiết kế hệ thống container thông minh có thể định vị chính xác vị trí,cung cấp nhiệt độ,độ ẩm bên trong container và gửi dữ liệu ,cảnh báo qua tin nhắn telegram trên smartphone (sử dụng vi điều khiển ESP32,cảm biến GPS NEO 6M,màn hình OLED,cảm biến DHT11)
