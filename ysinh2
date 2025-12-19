@@ -1,1 +1,317 @@
+//Form1.cs
+using System;
+using System.IO.Ports;
+using System.Windows.Forms;
+using ZedGraph;
+
+namespace ysinh
+{
+    public partial class Form1 : Form
+    {
+        SerialPort serialPort = new SerialPort();
+        GraphPane myPane;
+        PointPairList list = new PointPairList();
+        LineItem curve;
+
+        public Form1()
+        {
+            InitializeComponent();
+            myPane = zedGraphControl1.GraphPane;
+            myPane.Title.Text = "Đồ thị dữ liệu theo thời gian";
+            myPane.XAxis.Title.Text = "Thời gian (s)";
+            myPane.YAxis.Title.Text = "Dữ liệu";
+            curve = myPane.AddCurve("Dữ liệu", list, System.Drawing.Color.Red, SymbolType.None);
+            zedGraphControl1.AxisChange();
+
+            comboBox1.DataSource = SerialPort.GetPortNames();
+            btExit.Enabled = false;
+        }
+
+        private void btConnect_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                serialPort.PortName = comboBox1.Text;
+                serialPort.BaudRate = 115200;
+                serialPort.DataReceived += SerialPort_DataReceived;
+                serialPort.Open();
+                progressBar1.Value = 100;
+                btConnect.Enabled = false;
+                btExit.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Không thể kết nối: " + ex.Message);
+            }
+        }
+
+        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            try
+            {
+                string data = serialPort.ReadLine();
+                this.BeginInvoke(new Action(() =>
+                {
+                    string[] parts = data.Split(',');
+                    if (parts.Length >= 3)
+                    {
+                        double t = Convert.ToDouble(parts[0]) / 1000.0;
+                        double val = Convert.ToDouble(parts[1]);
+                        list.Add(t, val);
+
+                        ListViewItem item = new ListViewItem(t.ToString("F3"));
+                        item.SubItems.Add(val.ToString("F2"));
+                        listView1.Items.Add(item);
+
+                        if (list.Count > 500)
+                            list.RemoveAt(0);
+
+                        zedGraphControl1.AxisChange();
+                        zedGraphControl1.Invalidate();
+                    }
+                }));
+            }
+            catch { }
+        }
+
+        private void btRun_Click(object sender, EventArgs e)
+        {
+            if (!serialPort.IsOpen)
+            {
+                MessageBox.Show("Chưa kết nối COM!");
+                return;
+            }
+            serialPort.Write("RUN\n");
+        }
+
+        private void btPause_Click(object sender, EventArgs e)
+        {
+            serialPort.Write("PAUSE\n");
+        }
+
+        private void btClear_Click(object sender, EventArgs e)
+        {
+            list.Clear();
+            listView1.Items.Clear();
+            zedGraphControl1.Invalidate();
+        }
+
+        private void btExit_Click(object sender, EventArgs e)
+        {
+            if (serialPort.IsOpen) serialPort.Close();
+            Application.Exit();
+        }
+
+        private void btSave_Click(object sender, EventArgs e)
+        {
+            using (SaveFileDialog sfd = new SaveFileDialog()
+            {
+                Filter = "CSV files (*.csv)|*.csv",
+                Title = "Lưu dữ liệu"
+            })
+            {
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sfd.FileName))
+                    {
+                        foreach (ListViewItem item in listView1.Items)
+                        {
+                            sw.WriteLine($"{item.Text},{item.SubItems[1].Text}");
+                        }
+                    }
+                    MessageBox.Show("Đã lưu xong!");
+                }
+            }
+        }
+    }
+}
+
+
+//Form1.Designer.cs
+namespace ysinh
+{
+    partial class Form1
+    {
+        private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.Button btConnect;
+        private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.Button btExit;
+        private System.Windows.Forms.Button btSave;
+        private System.Windows.Forms.Button btRun;
+        private System.Windows.Forms.Button btPause;
+        private System.Windows.Forms.Button btClear;
+        private System.Windows.Forms.ListView listView1;
+        private System.Windows.Forms.ColumnHeader colTime;
+        private System.Windows.Forms.ColumnHeader colValue;
+        private ZedGraph.ZedGraphControl zedGraphControl1;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+                components.Dispose();
+            base.Dispose(disposing);
+        }
+
+        private void InitializeComponent()
+        {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.btConnect = new System.Windows.Forms.Button();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.btExit = new System.Windows.Forms.Button();
+            this.btSave = new System.Windows.Forms.Button();
+            this.btRun = new System.Windows.Forms.Button();
+            this.btPause = new System.Windows.Forms.Button();
+            this.btClear = new System.Windows.Forms.Button();
+            this.listView1 = new System.Windows.Forms.ListView();
+            this.colTime = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.colValue = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.zedGraphControl1 = new ZedGraph.ZedGraphControl();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.SuspendLayout();
+            // 
+            // comboBox1
+            // 
+            this.comboBox1.FormattingEnabled = true;
+            this.comboBox1.Location = new System.Drawing.Point(169, 3);
+            this.comboBox1.Name = "comboBox1";
+            this.comboBox1.Size = new System.Drawing.Size(80, 24);
+            this.comboBox1.TabIndex = 0;
+            // 
+            // btConnect
+            // 
+            this.btConnect.Location = new System.Drawing.Point(255, 1);
+            this.btConnect.Name = "btConnect";
+            this.btConnect.Size = new System.Drawing.Size(80, 25);
+            this.btConnect.TabIndex = 1;
+            this.btConnect.Text = "Kết nối";
+            this.btConnect.Click += new System.EventHandler(this.btConnect_Click);
+            // 
+            // progressBar1
+            // 
+            this.progressBar1.Location = new System.Drawing.Point(341, 1);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(80, 25);
+            this.progressBar1.TabIndex = 2;
+            // 
+            // btExit
+            // 
+            this.btExit.Location = new System.Drawing.Point(427, 1);
+            this.btExit.Name = "btExit";
+            this.btExit.Size = new System.Drawing.Size(80, 25);
+            this.btExit.TabIndex = 3;
+            this.btExit.Text = "Exit";
+            this.btExit.Click += new System.EventHandler(this.btExit_Click);
+            // 
+            // btSave
+            // 
+            this.btSave.Location = new System.Drawing.Point(169, 36);
+            this.btSave.Name = "btSave";
+            this.btSave.Size = new System.Drawing.Size(80, 25);
+            this.btSave.TabIndex = 4;
+            this.btSave.Text = "Save";
+            this.btSave.Click += new System.EventHandler(this.btSave_Click);
+            // 
+            // btRun
+            // 
+            this.btRun.Location = new System.Drawing.Point(255, 36);
+            this.btRun.Name = "btRun";
+            this.btRun.Size = new System.Drawing.Size(80, 25);
+            this.btRun.TabIndex = 5;
+            this.btRun.Text = "Run";
+            this.btRun.Click += new System.EventHandler(this.btRun_Click);
+            // 
+            // btPause
+            // 
+            this.btPause.Location = new System.Drawing.Point(341, 36);
+            this.btPause.Name = "btPause";
+            this.btPause.Size = new System.Drawing.Size(80, 25);
+            this.btPause.TabIndex = 6;
+            this.btPause.Text = "Pause";
+            this.btPause.Click += new System.EventHandler(this.btPause_Click);
+            // 
+            // btClear
+            // 
+            this.btClear.Location = new System.Drawing.Point(427, 36);
+            this.btClear.Name = "btClear";
+            this.btClear.Size = new System.Drawing.Size(80, 25);
+            this.btClear.TabIndex = 7;
+            this.btClear.Text = "Clear";
+            this.btClear.Click += new System.EventHandler(this.btClear_Click);
+            // 
+            // listView1
+            // 
+            this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.colTime,
+            this.colValue});
+            this.listView1.HideSelection = false;
+            this.listView1.Location = new System.Drawing.Point(168, 69);
+            this.listView1.Name = "listView1";
+            this.listView1.Size = new System.Drawing.Size(340, 636);
+            this.listView1.TabIndex = 8;
+            this.listView1.UseCompatibleStateImageBehavior = false;
+            this.listView1.View = System.Windows.Forms.View.Details;
+            // 
+            // colTime
+            // 
+            this.colTime.Text = "Thời gian (ms)";
+            this.colTime.Width = 160;
+            // 
+            // colValue
+            // 
+            this.colValue.Text = "Dữ liệu";
+            this.colValue.Width = 219;
+            // 
+            // zedGraphControl1
+            // 
+            this.zedGraphControl1.Location = new System.Drawing.Point(515, 69);
+            this.zedGraphControl1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.zedGraphControl1.Name = "zedGraphControl1";
+            this.zedGraphControl1.ScrollGrace = 0D;
+            this.zedGraphControl1.ScrollMaxX = 0D;
+            this.zedGraphControl1.ScrollMaxY = 0D;
+            this.zedGraphControl1.ScrollMaxY2 = 0D;
+            this.zedGraphControl1.ScrollMinX = 0D;
+            this.zedGraphControl1.ScrollMinY = 0D;
+            this.zedGraphControl1.ScrollMinY2 = 0D;
+            this.zedGraphControl1.Size = new System.Drawing.Size(700, 636);
+            this.zedGraphControl1.TabIndex = 9;
+            this.zedGraphControl1.UseExtendedPrintDialog = true;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
+            this.pictureBox1.Location = new System.Drawing.Point(-4, 1);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(172, 162);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox1.TabIndex = 12;
+            this.pictureBox1.TabStop = false;
+            // 
+            // Form1
+            // 
+            this.ClientSize = new System.Drawing.Size(1243, 707);
+            this.Controls.Add(this.pictureBox1);
+            this.Controls.Add(this.comboBox1);
+            this.Controls.Add(this.btConnect);
+            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.btExit);
+            this.Controls.Add(this.btSave);
+            this.Controls.Add(this.btRun);
+            this.Controls.Add(this.btPause);
+            this.Controls.Add(this.btClear);
+            this.Controls.Add(this.listView1);
+            this.Controls.Add(this.zedGraphControl1);
+            this.Name = "Form1";
+            this.Text = " ";
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.ResumeLayout(false);
+
+        }
+        private System.Windows.Forms.PictureBox pictureBox1;
+    }
+}
 
